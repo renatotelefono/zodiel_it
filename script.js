@@ -21,18 +21,27 @@ function inizializzaCarte() {
   renderCarteCoperte();
 }
 
-/* === Render delle 22 carte in 4  righe (6, 6, 6, 4) === */
+/* === Render carte in 4 righe (6,6,6,4) === */
 function renderCarteCoperte() {
   const container = document.getElementById("mazzo");
   container.innerHTML = "";
 
+  if (mazzo.length === 0) {
+    container.innerHTML = "<p><em>Tutte le carte sono state scelte.</em></p>";
+    return;
+  }
+
   const distribuzione = [6, 6, 6, 4];
   let index = 0;
+  let righe = [];
 
   distribuzione.forEach(qta => {
+    if (index >= mazzo.length) return;
+
     const riga = document.createElement("div");
     riga.className = "riga-carte";
-    for (let i = 0; i < qta; i++) {
+
+    for (let i = 0; i < qta && index < mazzo.length; i++) {
       const carta = mazzo[index];
       const img = document.createElement("img");
       img.src = "asset/dorso.jpeg";
@@ -42,71 +51,34 @@ function renderCarteCoperte() {
       riga.appendChild(img);
       index++;
     }
+
+    righe.push(riga);
     container.appendChild(riga);
   });
+
+  // 🔹 Aggiunge la classe “riga-finale” solo all’ultima riga effettivamente generata
+  if (righe.length > 0) {
+    righe.forEach(r => r.classList.remove("riga-finale"));
+    righe[righe.length - 1].classList.add("riga-finale");
+  }
 }
 
-/* === Gestione click === */
+
+
+/* === Click su una carta === */
 function onCartaClick(e) {
   const index = parseInt(e.target.dataset.index);
-  selezionaCarta(index);
+  selezionaCarta(index, e.target);
 }
-
-/* === Effetto "impila sulla prima" === */
-function mescolaCarte() {
-  const container = document.getElementById("mazzo");
-  const carte = Array.from(container.querySelectorAll("img"));
-
-  // Aggiorna l’orientamento casuale e mescola il mazzo
-  mazzo.forEach(c => (c.dritta = Math.random() < 0.5));
-  mazzo.sort(() => Math.random() - 0.5);
-
-  // Seleziona la prima carta come punto di riferimento per l’effetto “impila”
-  const primaCarta = carte[0];
-  if (!primaCarta) return;
-  const rectBase = primaCarta.getBoundingClientRect();
-
-  // Anima lo spostamento delle carte sopra la prima
-  carte.forEach(img => {
-    const rect = img.getBoundingClientRect();
-    const dx = rectBase.left - rect.left;
-    const dy = rectBase.top - rect.top;
-    img.style.transform = `translate(${dx}px, ${dy}px)`;
-    img.style.transition = "transform 0.6s ease";
-    img.style.zIndex = 10;
-  });
-
-  // Dopo 1 secondo, ridistribuisce le carte
-  setTimeout(() => {
-    renderCarteCoperte();
-
-    // 🔮 Disattiva visivamente le carte già selezionate
-    const tutteLeCarte = document.querySelectorAll("#mazzo img");
-    selezionate.forEach(sel => {
-      const index = mazzo.findIndex(c => c.nome === sel.nome);
-      if (index >= 0 && tutteLeCarte[index]) {
-        tutteLeCarte[index].style.pointerEvents = "none";
-        tutteLeCarte[index].style.opacity = "0.4";
-        tutteLeCarte[index].style.filter = "grayscale(100%)";
-      }
-    });
-  }, 1000);
-}
-
 
 /* === Selezione carta === */
-function selezionaCarta(index) {
+function selezionaCarta(index, imgElemento) {
   if (selezionate.length >= 3) return;
 
   const carta = mazzo[index];
-
-  // Disabilita la carta selezionata (non più cliccabile)
-  const imgSelezionata = document.querySelectorAll("#mazzo img")[index];
-  imgSelezionata.style.pointerEvents = "none";
-  imgSelezionata.style.opacity = "0.5";
-
   selezionate.push(carta);
 
+  // Mostra la carta nello slot corretto
   const slotId = ["passato", "presente", "futuro"][selezionate.length - 1];
   const slot = document.getElementById(slotId);
   const img = document.createElement("img");
@@ -116,11 +88,54 @@ function selezionaCarta(index) {
   slot.innerHTML = `<h3>${slot.querySelector("h3").textContent}</h3>`;
   slot.appendChild(img);
 
+  // 🔮 Effetto: la carta sparisce lasciando un buco
+  imgElemento.style.opacity = "0";
+  imgElemento.style.pointerEvents = "none";
+  imgElemento.style.transition = "opacity 0.5s ease";
+  setTimeout(() => {
+    imgElemento.style.visibility = "hidden";
+  }, 500);
+
+  // Rimuovi la carta dall'array del mazzo (non dal DOM)
+  mazzo.splice(index, 1);
+
   if (selezionate.length === 3) {
     document.getElementById("btnInterpretazione").disabled = false;
   }
 }
 
+/* === Mescola con effetto impila === */
+function mescolaCarte() {
+  const container = document.getElementById("mazzo");
+  const carte = Array.from(container.querySelectorAll("img")).filter(
+    img => img.style.visibility !== "hidden"
+  );
+
+  if (carte.length === 0) return;
+
+  // Aggiorna orientamento e mescola solo carte rimaste
+  mazzo.forEach(c => (c.dritta = Math.random() < 0.5));
+  mazzo.sort(() => Math.random() - 0.5);
+
+  // Effetto impila sulla prima carta visibile
+  const primaCarta = carte[0];
+  if (!primaCarta) return;
+  const rectBase = primaCarta.getBoundingClientRect();
+
+  carte.forEach(img => {
+    const rect = img.getBoundingClientRect();
+    const dx = rectBase.left - rect.left;
+    const dy = rectBase.top - rect.top;
+    img.style.transform = `translate(${dx}px, ${dy}px)`;
+    img.style.transition = "transform 0.6s ease";
+    img.style.zIndex = 10;
+  });
+
+  // Dopo 1 secondo, ridisegna il mazzo senza le carte scelte
+  setTimeout(() => {
+    renderCarteCoperte();
+  }, 1000);
+}
 
 /* === Interpretazione === */
 function interpreta() {
@@ -133,9 +148,7 @@ function interpreta() {
 }
 
 /* === Reset === */
-/* === Reset === */
 function reset() {
-  // Cancella lo stato delle selezioni
   selezionate = [];
   sessionStorage.removeItem("lettura");
   sessionStorage.removeItem("pdfAbilitato");
@@ -146,35 +159,17 @@ function reset() {
     slot.innerHTML = `<h3>${id.charAt(0).toUpperCase() + id.slice(1)}</h3>`;
   });
 
-  // Disabilita i pulsanti
+  // Disabilita pulsanti
   const btnInterp = document.getElementById("btnInterpretazione");
   if (btnInterp) btnInterp.disabled = true;
   const btnPdf = document.getElementById("btnPdf");
   if (btnPdf) btnPdf.disabled = true;
 
-  // Cancella il contenitore e rigenera tutte le carte coperte
-  const container = document.getElementById("mazzo");
-  container.innerHTML = "";
-
-  // Reinzializza completamente il mazzo e rende tutte le carte cliccabili
+  // Reinizializza completamente il mazzo
   inizializzaCarte();
-
-  // Dopo il render, assicurati che tutte le carte siano attive
-  setTimeout(() => {
-    const tutteLeCarte = document.querySelectorAll("#mazzo img");
-    tutteLeCarte.forEach(img => {
-      img.style.pointerEvents = "auto";
-      img.style.opacity = "1";
-      img.style.filter = "none";
-    });
-  }, 300);
 }
 
 /* === Avvio === */
 window.addEventListener("DOMContentLoaded", () => {
   inizializzaCarte();
 });
-
-
-
-
