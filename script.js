@@ -72,13 +72,13 @@ function onCartaClick(e) {
 }
 
 /* === Selezione carta === */
-function selezionaCarta(index, imgElemento) {
+function selezionaCarta(index) {
   if (selezionate.length >= 3) return;
 
   const carta = mazzo[index];
   selezionate.push(carta);
 
-  // Mostra la carta nello slot corretto
+  // Mostra la carta nello slot corrispondente
   const slotId = ["passato", "presente", "futuro"][selezionate.length - 1];
   const slot = document.getElementById(slotId);
   const img = document.createElement("img");
@@ -88,21 +88,20 @@ function selezionaCarta(index, imgElemento) {
   slot.innerHTML = `<h3>${slot.querySelector("h3").textContent}</h3>`;
   slot.appendChild(img);
 
-  // 🔮 Effetto: la carta sparisce lasciando un buco
-  imgElemento.style.opacity = "0";
-  imgElemento.style.pointerEvents = "none";
-  imgElemento.style.transition = "opacity 0.5s ease";
-  setTimeout(() => {
-    imgElemento.style.visibility = "hidden";
-  }, 500);
+  // 🔹 Nasconde solo la carta cliccata, lasciando il “buco”
+  const imgSelezionata = document.querySelectorAll("#mazzo img")[index];
+  imgSelezionata.style.visibility = "hidden"; // scompare ma mantiene lo spazio
+  imgSelezionata.style.pointerEvents = "none";
 
-  // Rimuovi la carta dall'array del mazzo (non dal DOM)
+  // 🔹 Rimuove la carta dal mazzo logico (ma senza ridistribuire)
   mazzo.splice(index, 1);
 
   if (selezionate.length === 3) {
     document.getElementById("btnInterpretazione").disabled = false;
   }
 }
+
+
 
 /* === Mescola con effetto impila === */
 function mescolaCarte() {
