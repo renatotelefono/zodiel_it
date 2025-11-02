@@ -124,11 +124,31 @@
         try {
           const resp = await fetch(`asset/descrizione_it/${nomeFile}`);
           const testo = await resp.text();
-          const testoPulito = testo.replace(/\n+/g, " ").trim();
-          const linee = doc.splitTextToSize(testoPulito, 170);
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(12);
-          doc.text(linee, 20, y);
+          // Trasforma i punti in ritorni a capo e pulisci testo
+const testoPulito = testo
+  .replace(/\n+/g, " ")       // rimuove doppie righe
+  .replace(/\.\s*/g, ".\n")   // va a capo dopo ogni punto
+  .trim();
+
+
+
+// Imposta font e stile
+doc.setFont("helvetica", "normal");
+doc.setFontSize(12);
+
+// Imposta margini simmetrici
+const pageWidth = doc.internal.pageSize.getWidth();
+const margin = 20; // margine sinistro e destro uguali
+const textWidth = pageWidth - margin * 2;
+
+// Suddivide il testo per adattarlo ai margini
+const linee = doc.splitTextToSize(testoPulito, textWidth);
+
+// Scrive testo con margini uniformi
+doc.text(linee, margin, y, { align: "left" });
+
+
+       
         } catch {
           doc.text("Descrizione non disponibile.", 20, y);
         }
