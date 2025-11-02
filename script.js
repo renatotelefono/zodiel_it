@@ -76,6 +76,9 @@ function selezionaCarta(index) {
   if (selezionate.length >= 3) return;
 
   const carta = mazzo[index];
+  if (!carta || carta.usata) return; // evita clic su carte già scelte
+
+  carta.usata = true; // 🔹 segna la carta come "usata"
   selezionate.push(carta);
 
   // Mostra la carta nello slot corrispondente
@@ -90,16 +93,14 @@ function selezionaCarta(index) {
 
   // 🔹 Nasconde solo la carta cliccata, lasciando il “buco”
   const imgSelezionata = document.querySelectorAll("#mazzo img")[index];
-  imgSelezionata.style.visibility = "hidden"; // scompare ma mantiene lo spazio
+  imgSelezionata.style.visibility = "hidden";
   imgSelezionata.style.pointerEvents = "none";
-
-  // 🔹 Rimuove la carta dal mazzo logico (ma senza ridistribuire)
-  mazzo.splice(index, 1);
 
   if (selezionate.length === 3) {
     document.getElementById("btnInterpretazione").disabled = false;
   }
 }
+
 
 
 
@@ -113,6 +114,7 @@ function mescolaCarte() {
   if (carte.length === 0) return;
 
   // Aggiorna orientamento e mescola solo carte rimaste
+  mazzo = mazzo.filter(c => !c.usata);
   mazzo.forEach(c => (c.dritta = Math.random() < 0.5));
   mazzo.sort(() => Math.random() - 0.5);
 
