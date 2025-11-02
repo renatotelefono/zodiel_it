@@ -6,8 +6,9 @@
 
   <!-- Libreria jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="stile.css">
+
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="stile.css">
   <style>
     body {
       background-color: #000;
@@ -62,30 +63,61 @@
       }
 
       const doc = new jsPDF();
-      let y = 20;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("Lettura dei Tarocchi - Metodo delle Tre Carte", 105, y, { align: "center" });
-      y += 15;
-
       const posizioni = ["passato", "presente", "futuro"];
 
-      for (const pos of posizioni) {
+      for (let i = 0; i < posizioni.length; i++) {
+        const pos = posizioni[i];
         const carta = lettura[pos];
         if (!carta) continue;
 
+        // Nuova pagina per ogni sezione, tranne la prima
+        if (i > 0) doc.addPage();
+
+        let y = 20;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.text(`Lettura dei Tarocchi - ${pos.charAt(0).toUpperCase() + pos.slice(1)}`, 105, y, { align: "center" });
+        y += 15;
+
         doc.setFontSize(14);
-        doc.text(`${pos.charAt(0).toUpperCase() + pos.slice(1)}: ${carta.nome}`, 20, y);
+        doc.text(`${carta.nome}`, 105, y, { align: "center" });
         y += 10;
 
-        // Aggiunge immagine
+        // Carica immagine
         const img = new Image();
+        img.crossOrigin = "anonymous";
         img.src = carta.img;
-        await new Promise(r => (img.onload = r));
-        doc.addImage(img, "JPEG", 20, y, 40, 67);
+        await new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
 
-        // Carica descrizione dal file .md
+        // Prepara immagine ruotata se necessario
+        let finalData;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        if (carta.dritta) {
+          ctx.drawImage(img, 0, 0);
+        } else {
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(Math.PI);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        }
+        finalData = canvas.toDataURL("image/jpeg", 1.0);
+
+        // Inserisce immagine centrata
+        const imgW = 60;
+        const imgH = 100;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const imgX = (pageWidth - imgW) / 2;
+        doc.addImage(finalData, "JPEG", imgX, y, imgW, imgH);
+        y += imgH + 15;
+
+        // Carica e scrive la descrizione
         const orientamento = carta.dritta ? "" : "_r";
         const nomeFile = `${carta.nome}${orientamento}_${pos.charAt(0).toUpperCase() + pos.slice(1)}.md`;
 
@@ -93,15 +125,13 @@
           const resp = await fetch(`asset/descrizione_it/${nomeFile}`);
           const testo = await resp.text();
           const testoPulito = testo.replace(/\n+/g, " ").trim();
-          const linee = doc.splitTextToSize(testoPulito, 140);
+          const linee = doc.splitTextToSize(testoPulito, 170);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(12);
-          doc.text(linee, 70, y + 10);
+          doc.text(linee, 20, y);
         } catch {
-          doc.text("Descrizione non disponibile.", 70, y + 10);
+          doc.text("Descrizione non disponibile.", 20, y);
         }
-
-        y += 90;
       }
 
       doc.save("lettura_tarocchi.pdf");
