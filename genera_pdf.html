@@ -76,9 +76,19 @@
         let y = 20;
 
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.text(`Lettura dei Tarocchi - ${pos.charAt(0).toUpperCase() + pos.slice(1)}`, 105, y, { align: "center" });
-        y += 15;
+doc.setFontSize(18);
+doc.text(`Lettura dei Tarocchi - ${pos.charAt(0).toUpperCase() + pos.slice(1)}`, 105, y, { align: "center" });
+y += 8;
+
+// Aggiunge la data corrente in formato "2 Novembre 2025"
+const oggi = new Date();
+const opzioniData = { day: 'numeric', month: 'long', year: 'numeric' };
+const dataFormattata = oggi.toLocaleDateString('it-IT', opzioniData);
+doc.setFont("helvetica", "normal");
+doc.setFontSize(12);
+doc.text(`Lettura del ${dataFormattata}`, 105, y, { align: "center" });
+y += 10;
+
 
         doc.setFontSize(14);
         doc.text(`${carta.nome}`, 105, y, { align: "center" });
