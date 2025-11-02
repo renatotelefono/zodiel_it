@@ -19,15 +19,16 @@ body {
 .barra button {
   background-color: #40E0D0;
   border: none;
-  border-radius: 20px;
-  padding: 10px 25px;
+  border-radius: 25px;
+  padding: 18px 40px;       /* pulsanti più alti e larghi */
   color: #111;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 22px;          /* testo più grande */
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 15px #40E0D0;
 }
+
 
 .barra button:hover {
   transform: scale(1.1);
@@ -129,4 +130,9 @@ body {
 
 .mazzo.ridistribuita img {
   transition: all 1s ease-in-out;
+}
+button {
+  font-size: 22px !important;
+  padding: 16px 40px !important;
+  border-radius: 20px !important;
 }
